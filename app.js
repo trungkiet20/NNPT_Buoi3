@@ -7,7 +7,7 @@ let pageSize = 10;
 let sortState = { field: null, dir: 1 }; // dir: 1 = asc, -1 = desc
 
 // Elements
-const tableBody = document.getElementById('tableBody');
+const gridBody = document.getElementById('gridBody');
 const paginationEl = document.getElementById('pagination');
 const searchInput = document.getElementById('searchInput');
 const pageSizeSelect = document.getElementById('pageSizeSelect');
@@ -102,28 +102,38 @@ function render() {
   const start = (currentPage - 1) * pageSize;
   const pageItems = filtered.slice(start, start + pageSize);
 
-  tableBody.innerHTML = pageItems.map(p => {
+  gridBody.innerHTML = pageItems.map(p => {
     const catName = p.category ? p.category.name : (p.categoryId ? `#${p.categoryId}` : '—');
-    const imgHtml = p.images && p.images.length ? `<img src="${p.images[0]}" class="thumb" alt="img">` : '';
-    // the row has tooltip showing description
+    const img = (p.images && p.images.length) ? p.images[0] : 'https://via.placeholder.com/400x240?text=No+Image';
     const description = (p.description || '').replace(/"/g, '&quot;');
     return `
-      <tr class="hover-row" data-id="${p.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="${description}">
-        <td>${p.id}</td>
-        <td>${escapeHtml(p.title)}</td>
-        <td>${p.price}</td>
-        <td>${escapeHtml(catName)}</td>
-        <td>${imgHtml}</td>
-      </tr>
+      <div class="col">
+        <div class="card card-item h-100" data-id="${p.id}" data-bs-toggle="tooltip" data-bs-placement="top" title="${description}">
+          <img src="${img}" class="card-img-top card-thumb" alt="img">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title mb-1">${escapeHtml(p.title)}</h5>
+            <p class="card-text text-muted mb-2">${escapeHtml(catName)}</p>
+            <div class="mt-auto d-flex justify-content-between align-items-center">
+              <strong class="text-primary">${p.price}</strong>
+              <button class="btn btn-sm btn-outline-primary btn-view">View</button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
   }).join('');
 
-  // attach click listeners to rows
-  Array.from(tableBody.querySelectorAll('tr[data-id]')).forEach(tr => {
-    tr.addEventListener('click', () => openViewModal(+tr.dataset.id));
+  // attach click listeners to cards and view buttons
+  Array.from(gridBody.querySelectorAll('.card-item, .btn-view')).forEach(el => {
+    el.addEventListener('click', (e) => {
+      const card = e.currentTarget.classList.contains('card-item') ? e.currentTarget : e.currentTarget.closest('.card-item');
+      if (!card) return;
+      const id = +card.dataset.id;
+      openViewModal(id);
+    });
   });
 
-  // enable bootstrap tooltips for rows
+  // enable bootstrap tooltips for cards
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
